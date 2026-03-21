@@ -37,28 +37,41 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let dino, cacti, score, lives, gameOver;
+let dino = null;
+let cacti = [];
+let score = 0;
+let lives = 3;
+let gameOver = false;
+let started = false; // ✅ important
 
+// INIT GAME
 function init(){
-  dino = {x:100,y:500,w:50,h:60,vy:0};
+  dino = {x:100, y:500, w:50, h:60, vy:0};
   cacti = [];
   score = 0;
   lives = 3;
   gameOver = false;
 }
 
+// START BUTTON
 function startGame(){
-  document.getElementById("menu").style.display="none";
   init();
+  started = true; // ✅ important
+  document.getElementById("menu").style.display="none";
 }
 
+// KEY INPUT
 document.addEventListener("keydown", e=>{
+  if(!started) return;
+
   if(e.code==="Space" && dino.y===500){
     dino.vy = -18;
   }
 });
 
+// UPDATE
 function update(){
+  if(!started) return; // ✅ FIX
   if(gameOver) return;
 
   dino.y += dino.vy;
@@ -73,7 +86,8 @@ function update(){
     cacti.push({x:canvas.width,y:500,w:40,h:40});
   }
 
-  cacti.forEach((c,i)=>{
+  for(let i = cacti.length-1; i >= 0; i--){
+    let c = cacti[i];
     c.x -= 6;
 
     if(
@@ -83,29 +97,46 @@ function update(){
     ){
       lives--;
       cacti.splice(i,1);
-      if(lives<=0){
-        gameOver=true;
+
+      if(lives <= 0){
+        gameOver = true;
         saveScore(score);
         showMenu();
       }
     }
-  });
+
+    if(c.x < -50){
+      cacti.splice(i,1);
+    }
+  }
 
   score++;
 }
 
+// DRAW
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!started) return; // ✅ FIX
 
   ctx.fillStyle="white";
   ctx.fillRect(dino.x,dino.y,dino.w,dino.h);
 
   ctx.fillStyle="green";
-  cacti.forEach(c=>ctx.fillRect(c.x,c.y,c.w,c.h));
+  cacti.forEach(c=>{
+    ctx.fillRect(c.x,c.y,c.w,c.h);
+  });
 
-  ctx.fillText("Score:"+score,20,30);
+  ctx.fillStyle="white";
+  ctx.font="20px Arial";
+  ctx.fillText("Score: "+score,20,30);
+
+  if(gameOver){
+    ctx.fillText("GAME OVER",canvas.width/2,200);
+  }
 }
 
+// LOOP
 function loop(){
   update();
   draw();
@@ -113,23 +144,33 @@ function loop(){
 }
 loop();
 
-// 🔥 API CALLS
+// API
 async function saveScore(score){
-  await fetch("/api/score",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({score})
-  });
+  try{
+    await fetch("/api/score",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({score})
+    });
+  }catch(e){
+    console.log("API error", e);
+  }
 }
 
 async function loadHighScore(){
-  let res = await fetch("/api/score");
-  let data = await res.json();
-  document.getElementById("highscore").innerText =
-    "High Score: " + (data.score || 0);
+  try{
+    let res = await fetch("/api/score");
+    let data = await res.json();
+    document.getElementById("highscore").innerText =
+      "High Score: " + (data.score || 0);
+  }catch(e){
+    document.getElementById("highscore").innerText =
+      "High Score: 0";
+  }
 }
 
 function showMenu(){
+  started = false;
   document.getElementById("menu").style.display="block";
   loadHighScore();
 }
