@@ -1,310 +1,283 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Ryuk Running Game</title>
+<title>Ryuk Running Game - Shinigami Edition</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { margin:0; overflow:hidden; background:black; font-family:Arial; }
-canvas { display:block; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@500;700;900&display=swap');
 
-.btn {
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  padding:12px 25px;
-  font-size:18px;
-  background:#00ff88;
-  border:none;
-  border-radius:8px;
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #09090e;
+  font-family: 'Inter', sans-serif;
+  color: #f3f4f6;
 }
 
-.hud {
-  position:absolute;
-  top:10px;
-  left:10px;
-  background:rgba(0,0,0,0.6);
-  color:white;
-  padding:10px 15px;
-  border-radius:10px;
-  font-size:16px;
+canvas { display: block; }
+
+/* Glassmorphic overlay base */
+.overlay-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 420px;
+  background: rgba(15, 15, 25, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 46, 147, 0.25);
+  border-radius: 16px;
+  padding: 35px 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6),
+              0 0 30px rgba(255, 46, 147, 0.15);
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-sizing: border-box;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
+
+.game-title { font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900; color: #ff2e93; text-shadow: 0 0 10px rgba(255,46,147,0.6), 0 0 20px rgba(255,46,147,0.3); margin-bottom: 5px; letter-spacing: 2px; text-transform: uppercase; }
+.game-subtitle { font-size: 13px; color: #00f0ff; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 30px; font-weight: 700; text-shadow: 0 0 5px rgba(0,240,255,0.4); }
+
+.input-group { margin-bottom: 25px; text-align: left; }
+.input-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; margin-bottom: 8px; font-weight: 600; }
+.text-input { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color:#fff; font-size:16px; font-family:'Inter',sans-serif; outline:none; box-sizing:border-box; transition: all .2s ease; }
+.text-input:focus { border-color:#00f0ff; box-shadow:0 0 10px rgba(0,240,255,0.25); }
+
+.btn-premium { display:block; width:100%; padding:14px 28px; margin:10px 0; font-size:15px; font-family:'Orbitron',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:#fff; background:linear-gradient(135deg,#ff2e93 0%,#ff0055 100%); border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 15px rgba(255,46,147,0.35); transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275); }
+.btn-premium:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,46,147,0.5), 0 0 15px rgba(255,46,147,0.25); }
+.btn-premium:active { transform:translateY(1px); }
+.btn-secondary { background:transparent; border:1px solid rgba(0,240,255,0.4); color:#00f0ff; box-shadow:none; }
+.btn-secondary:hover { background:rgba(0,240,255,0.1); box-shadow:0 0 15px rgba(0,240,255,0.2); border-color:#00f0ff; }
+
+/* HUD */
+.hud-container { position:absolute; top:20px; left:20px; right:20px; display:flex; justify-content:space-between; align-items:center; pointer-events:none; z-index:50; }
+.hud-card { background:rgba(15,15,25,0.7); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.08); padding:10px 20px; border-radius:12px; font-family:'Orbitron',sans-serif; color:#fff; box-shadow:0 4px 20px rgba(0,0,0,0.3); display:flex; align-items:center; gap:20px; }
+.hud-item { font-size:14px; font-weight:500; letter-spacing:1px; }
+.hud-value { font-weight:700; color:#00f0ff; }
+.hud-value-alt { font-weight:700; color:#ff2e93; }
+.hud-lives { display:flex; gap:6px; align-items:center; }
+.apple-life { font-size:20px; filter:drop-shadow(0 0 5px rgba(255,46,147,0.8)); animation:pulse 1.5s infinite alternate; display:inline-block; }
+.apple-empty { opacity:0.25; filter:grayscale(1) blur(0.5px); animation:none; }
+@keyframes pulse { 0%{transform:scale(1);} 100%{transform:scale(1.15);} }
+
+/* Leaderboard modal */
+.leaderboard-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.9); width:90%; max-width:420px; max-height:80%; background:rgba(10,10,15,0.92); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); border:1px solid rgba(0,240,255,0.3); border-radius:16px; padding:30px 25px 25px 25px; box-shadow:0 15px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,240,255,0.15); color:white; z-index:200; display:none; flex-direction:column; box-sizing:border-box; transition:all .3s cubic-bezier(0.165,0.84,0.44,1); }
+.leaderboard-modal.active { display:flex; transform:translate(-50%,-50%) scale(1); }
+.leaderboard-title { font-family:'Orbitron',sans-serif; font-size:24px; font-weight:700; color:#00f0ff; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; text-align:center; text-shadow:0 0 10px rgba(0,240,255,0.5); }
+.leaderboard-list { flex-grow:1; overflow-y:auto; margin-bottom:20px; padding-right:5px; }
+.leaderboard-list::-webkit-scrollbar { width:6px; }
+.leaderboard-list::-webkit-scrollbar-track { background:rgba(255,255,255,0.05); border-radius:3px; }
+.leaderboard-list::-webkit-scrollbar-thumb { background:rgba(0,240,255,0.3); border-radius:3px; }
+.leaderboard-list::-webkit-scrollbar-thumb:hover { background:rgba(0,240,255,0.6); }
+.leaderboard-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; margin-bottom:8px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05); font-size:14px; }
+.leaderboard-item.current-user { border-color:rgba(255,46,147,0.5); background:rgba(255,46,147,0.1); }
+.rank-badge { display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; font-family:'Orbitron',sans-serif; font-weight:700; font-size:11px; margin-right:12px; background:rgba(255,255,255,0.1); flex-shrink:0; }
+.rank-1 { background:linear-gradient(135deg,#ffd700,#ffa500); color:#000; box-shadow:0 0 8px rgba(255,215,0,0.4); }
+.rank-2 { background:linear-gradient(135deg,#c0c0c0,#808080); color:#000; box-shadow:0 0 8px rgba(192,192,192,0.4); }
+.rank-3 { background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; box-shadow:0 0 8px rgba(205,127,50,0.4); }
+.leaderboard-name { font-weight:600; flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:10px; }
+.leaderboard-score { font-family:'Orbitron',sans-serif; font-weight:700; color:#ff2e93; text-shadow:0 0 5px rgba(255,46,147,0.3); }
+.close-btn { width:auto; min-width:140px; margin:0 auto; padding:10px 20px; font-size:14px; }
+
+/* Pause overlay – re‑using .overlay-panel styles */
 </style>
 </head>
-
 <body>
 
-<div class="hud">
-  <div id="scoreText">Score: 0</div>
-  <div id="livesText">Lives: 3</div>
-  <div id="highText">High: 0</div>
+<!-- HUD -->
+<div class="hud-container">
+  <div class="hud-card">
+    <div class="hud-item">SCORE: <span id="scoreVal" class="hud-value">0</span></div>
+    <div class="hud-item">HIGH: <span id="highVal" class="hud-value-alt">0</span></div>
+  </div>
+  <div class="hud-card">
+    <div class="hud-lives" id="livesContainer"></div>
+  </div>
 </div>
 
-<button id="startBtn" class="btn" style="top:60%;">START</button>
-<button id="homeBtn" class="btn" style="top:65%; display:none;">HOME</button>
+<!-- Home Overlay -->
+<div id="homeOverlay" class="overlay-panel">
+  <div class="game-title">Ryuk Running</div>
+  <div class="game-subtitle">Shinigami Edition</div>
+  <div id="homeUserInfo" class="hud-card" style="margin-bottom:15px; display:none;"></div>
+  <div id="menuScoreContainer" class="hud-card" style="margin-bottom:15px; display:none;">SCORE: <span id="menuScore" class="hud-value">0</span></div>
+  <div class="input-group">
+    <label class="input-label" for="usernameInput">Enter Shinigami Nickname</label>
+    <input type="text" id="usernameInput" class="text-input" placeholder="Shinigami" maxlength="15">
+  </div>
+  <button id="startBtn" class="btn-premium">Start Game</button>
+  <button id="leaderboardBtn" class="btn-premium btn-secondary">Leaderboard</button>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" class="overlay-panel" style="display:none;">
+  <div class="game-title" style="color:#ff003c; text-shadow:0 0 15px rgba(255,0,60,0.8);">Game Over</div>
+  <div class="game-subtitle">You dropped the death note!</div>
+  <div style="margin:20px 0; font-family:'Orbitron',sans-serif;">
+    <div style="font-size:12px; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">Final Score</div>
+    <div id="finalScoreVal" style="font-size:48px; font-weight:900; color:#00f0ff; text-shadow:0 0 10px rgba(0,240,255,0.5);">0</div>
+  </div>
+  <div style="margin-bottom:25px; font-family:'Orbitron',sans-serif;">
+    <div style="font-size:11px; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">High Score</div>
+    <div id="gameOverHighVal" style="font-size:20px; font-weight:700; color:#ffffff;">0</div>
+  </div>
+  <button id="restartBtn" class="btn-premium">Play Again</button>
+  <button id="gameOverHomeBtn" class="btn-premium btn-secondary">Main Menu</button>
+</div>
+
+<!-- Leaderboard Modal -->
+<div id="leaderboardOverlay" class="leaderboard-modal">
+  <div class="leaderboard-title">Global Leaderboard</div>
+  <div class="leaderboard-list" id="leaderboardList">
+    <div style="text-align:center; color:#9ca3af; padding-top:50px;">Loading scores...</div>
+  </div>
+  <button id="closeLeaderboardBtn" class="btn-premium close-btn btn-secondary">Close</button>
+</div>
+
+<!-- Pause Overlay -->
+<div id="pauseOverlay" class="overlay-panel" style="display:none;">
+  <div class="game-title">Paused</div>
+  <button id="resumeBtn" class="btn-premium">Resume</button>
+  <button id="pauseToMainMenuBtn" class="btn-premium btn-secondary">Main Menu</button>
+  <button id="exitBtn" class="btn-premium btn-secondary">Exit</button>
+</div>
 
 <canvas id="game"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.onresize = resize;
 
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resize();
-window.onresize = resize;
-
-// ===== USER ID =====
+// USER ID & NICKNAME
 let userId = localStorage.getItem("userId");
-if(!userId){
-  userId = "user_" + Math.random().toString(36).substring(2);
-  localStorage.setItem("userId", userId);
-}
+if(!userId){ userId = "user_" + Math.random().toString(36).substring(2); localStorage.setItem("userId", userId); }
+let username = localStorage.getItem("username") || "Shinigami";
+document.getElementById("usernameInput").value = username;
 
-// ===== ASSETS =====
-const dino = new Image(); dino.src="dino.gif";
-const coin = new Image(); coin.src="coin.png";
-const cactus = new Image(); cactus.src="cactus.png";
-const bg = new Image(); bg.src="background.png";
-
+// ASSETS
+const dino = new Image(); dino.src = "dino.gif";
+const coin = new Image(); coin.src = "coin.png";
+const cactus = new Image(); cactus.src = "cactus.png";
+const bg = new Image(); bg.src = "background.png";
 const collectSound = new Audio("collect.wav");
 const gameOverSound = new Audio("game_over.wav");
 const bgMusic = new Audio("background_music.wav");
 bgMusic.loop = true;
 
-// ===== STATES =====
-const HOME=0, PLAYING=1, GAME_OVER=2;
+// GAME STATES
+const HOME = 0, PLAYING = 1, GAME_OVER = 2, PAUSED = 3;
 let gameState = HOME;
 
-// ===== VARIABLES =====
-let dinoX=120, dinoY;
-let dinoW=60, dinoH=70;
+// VARIABLES
+let dinoX = 120, dinoY;
+let dinoW = 60, dinoH = 70;
 let ground;
+let velocity = 0, gravity = 0.45;
+let score = 0, lives = 3, highScore = 0;
+let jump = false;
+let coins = [], cacti = [];
+let speed = 3, bgX = 0;
+let gameOverPlayed = false;
+let shakeIntensity = 0, shakeDecay = 0.9;
+let particles = [];
 
-let velocity=0, gravity=0.45;
-
-let score=0, lives=3, highScore=0;
-
-let jump=false;
-let coins=[], cacti=[];
-let speed=3, bgX=0;
-let gameOverPlayed=false;
-
-// ===== UI =====
-const scoreText = document.getElementById("scoreText");
-const livesText = document.getElementById("livesText");
-const highText = document.getElementById("highText");
-
-// ===== BUTTONS =====
-const startBtn=document.getElementById("startBtn");
-const homeBtn=document.getElementById("homeBtn");
-
-// ===== START =====
-startBtn.onclick = async () => {
-  init();
-  gameState = PLAYING;
-  startBtn.style.display = "none";
-
-  bgMusic.currentTime = 0;
-  bgMusic.play();
-
-  await loadHighScore();
-};
-
-// ===== HOME =====
-homeBtn.onclick = async () => {
-  gameState = HOME;
-  homeBtn.style.display = "none";
-  startBtn.style.display = "block";
-
-  bgMusic.pause();
-  gameOverSound.pause();
-
-  await loadHighScore();
-};
-
-// ===== INIT =====
-function init(){
-  ground = canvas.height - dinoH;
-  dinoY = ground;
-
-  velocity=0;
-  score=0;
-  lives=3;
-
-  coins=[];
-  cacti=[];
-
-  speed=3;
-  gameOverPlayed=false;
-
-  gameOverSound.pause();
-  gameOverSound.currentTime = 0;
+class Particle {
+  constructor(x, y, color, vx, vy, size, life){ this.x=x; this.y=y; this.color=color; this.vx=vx; this.vy=vy; this.size=size; this.life=life; this.maxLife=life; }
+  update(){ this.x+=this.vx; this.y+=this.vy; this.life--; }
+  draw(ctx){ ctx.save(); ctx.globalAlpha = Math.max(0, this.life/this.maxLife); ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+}
+function spawnCoinSparks(x,y){ for(let i=0;i<12;i++){ let a=Math.random()*Math.PI*2; let s=Math.random()*3+1; let sz=Math.random()*3+1.5; let life=Math.random()*20+20; particles.push(new Particle(x+20, y+20, "rgba(255,215,0,0.9)", Math.cos(a)*s, Math.sin(a)*s, sz, life)); } }
+function spawnDamageParticles(x,y){ for(let i=0;i<20;i++){ let a=Math.random()*Math.PI*2; let s=Math.random()*4+2; let sz=Math.random()*4+2; let life=Math.random()*25+25; particles.push(new Particle(x+dinoW/2, y+dinoH/2, Math.random()>0.4?"rgba(255,46,147,0.95)":"rgba(255,0,60,0.95)", Math.cos(a)*s, Math.sin(a)*s, sz, life)); }
+  for(let i=0;i<8;i++){ let a=Math.random()*Math.PI*2; let s=Math.random()*1.5+0.5; let sz=Math.random()*8+8; let life=Math.random()*35+25; particles.push(new Particle(x+dinoW/2, y+dinoH/2, "rgba(40,30,35,0.4)", Math.cos(a)*s, Math.sin(a)*s, sz, life)); }
 }
 
-// ===== INPUT =====
-document.addEventListener("keydown", e=>{
-  if(e.code==="Space" && gameState===PLAYING && dinoY>=ground){
-    jump=true;
-  }
-});
+// DOM ELEMENTS
+const scoreVal = document.getElementById("scoreVal");
+const highVal = document.getElementById("highVal");
+const livesContainer = document.getElementById("livesContainer");
+const homeOverlay = document.getElementById("homeOverlay");
+const homeUserInfo = document.getElementById("homeUserInfo");
+const gameOverOverlay = document.getElementById("gameOverOverlay");
+const leaderboardOverlay = document.getElementById("leaderboardOverlay");
+const leaderboardList = document.getElementById("leaderboardList");
+const pauseOverlay = document.getElementById("pauseOverlay");
 
-canvas.addEventListener("touchstart", ()=>{
-  if(gameState===PLAYING && dinoY>=ground){
-    jump=true;
-  }
-});
+const startBtn = document.getElementById("startBtn");
+const leaderboardBtn = document.getElementById("leaderboardBtn");
+const closeLeaderboardBtn = document.getElementById("closeLeaderboardBtn");
+const restartBtn = document.getElementById("restartBtn");
+const gameOverHomeBtn = document.getElementById("gameOverHomeBtn");
+const resumeBtn = document.getElementById("resumeBtn");
+const pauseToMainMenuBtn = document.getElementById("pauseToMainMenuBtn");
+const exitBtn = document.getElementById("exitBtn");
 
-// ===== COLLISION =====
-function isColliding(a,b){
-  return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
-}
+function escapeHTML(str){ return str.replace(/[&<>'\"]/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]||ch)); }
 
-// ===== GAME OVER HANDLER (FIXED) =====
-async function handleGameOver(){
-  try{
-    let res = await fetch("/api/score",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({score,userId})
-    });
+function renderLives(){ let html = ""; for(let i=0;i<3;i++){ html += i<lives?'<span class="apple-life">🍎</span>':'<span class="apple-life apple-empty">🍎</span>'; } livesContainer.innerHTML = html; }
 
-    let data = await res.json();
+function updateHomeInfo(){ if(username){ homeUserInfo.style.display = "block"; homeUserInfo.innerHTML = `Player: <span class="hud-value">${escapeHTML(username)}</span><br/>High: <span class="hud-value-alt">${highScore}</span>`; } else { homeUserInfo.style.display = "none"; } }
 
-    // ✅ UPDATE IMMEDIATELY
-    highScore = data.score;
-    highText.innerText = "High: " + highScore;
+function updateMenuScore(){ const menuScoreEl = document.getElementById("menuScore"); if(menuScoreEl){ menuScoreEl.innerText = highScore; const container = document.getElementById("menuScoreContainer"); if(container) container.style.display = "block"; } const hudHigh = document.getElementById("highVal"); if(hudHigh) hudHigh.innerText = highScore; }
 
-  }catch(e){
-    console.log("Save error", e);
-  }
-}
+async function showLeaderboard(){ leaderboardOverlay.classList.add("active"); leaderboardList.innerHTML = '<div style="text-align:center; color:#9ca3af; padding-top:50px;">Loading scores...</div>'; try{ let res = await fetch("/api/score?leaderboard=true"); let data = await res.json(); if(data.leaderboard && data.leaderboard.length){ let html=""; data.leaderboard.forEach(item=>{ let isMe = item.username===username && item.score===highScore; let rowClass = isMe?"current-user":""; let rankClass = `rank-${item.rank}`; html+=`<div class="leaderboard-item ${rowClass}"><div class="rank-badge ${rankClass}">${item.rank}</div><div class="leaderboard-name">${escapeHTML(item.username)}</div><div class="leaderboard-score">${item.score}</div></div>`; }); leaderboardList.innerHTML = html; } else { leaderboardList.innerHTML = '<div style="text-align:center; color:#9ca3af; padding-top:50px;">No scores yet.</div>'; } }catch(e){ console.error(e); leaderboardList.innerHTML = '<div style="text-align:center; color:#ff003c; padding-top:50px;">Failed to load leaderboard</div>'; } }
+leaderboardBtn.onclick = showLeaderboard;
+closeLeaderboardBtn.onclick = ()=>{ leaderboardOverlay.classList.remove("active"); };
 
-// ===== UPDATE =====
-function update(){
-  if(gameState!==PLAYING) return;
+startBtn.onclick = async ()=>{ const input = document.getElementById("usernameInput").value.trim(); username = input || "Shinigami"; localStorage.setItem("username", username); init(); gameState = PLAYING; homeOverlay.style.display = "none"; bgMusic.currentTime = 0; bgMusic.play(); await loadHighScore(); updateHomeInfo(); updateMenuScore(); };
 
-  bgX -= speed;
-  if(bgX <= -canvas.width) bgX=0;
+restartBtn.onclick = async ()=>{ init(); gameState = PLAYING; gameOverOverlay.style.display = "none"; bgMusic.currentTime = 0; bgMusic.play(); await loadHighScore(); updateHomeInfo(); updateMenuScore(); };
 
-  if(jump){
-    velocity=-11;
-    jump=false;
-  }
+gameOverHomeBtn.onclick = async ()=>{ gameState = HOME; gameOverOverlay.style.display = "none"; homeOverlay.style.display = "block"; bgMusic.pause(); gameOverSound.pause(); await loadHighScore(); updateHomeInfo(); updateMenuScore(); };
 
-  dinoY += velocity;
-  velocity += gravity;
-  if(velocity>8) velocity=8;
+resumeBtn.onclick = ()=>{ gameState = PLAYING; pauseOverlay.style.display = "none"; bgMusic.play(); };
 
-  if(dinoY>ground){ dinoY=ground; velocity=0; }
+pauseToMainMenuBtn.onclick = async ()=>{ gameState = HOME; pauseOverlay.style.display = "none"; homeOverlay.style.display = "block"; bgMusic.pause(); await loadHighScore(); updateHomeInfo(); updateMenuScore(); };
 
-  // coins
-  if(Math.random()<0.02){
-    coins.push({x:canvas.width,y:ground});
-  }
+exitBtn.onclick = ()=>{ window.close(); setTimeout(()=>{ location.href = "about:blank"; }, 100); };
 
-  for(let i=coins.length-1;i>=0;i--){
-    let c=coins[i];
-    c.x-=speed;
+function init(){ ground = canvas.height - dinoH; dinoY = ground; velocity=0; score=0; lives=3; coins=[]; cacti=[]; particles=[]; shakeIntensity=0; speed=3; gameOverPlayed=false; gameOverSound.pause(); gameOverSound.currentTime=0; renderLives(); }
 
-    let dinoBox={x:dinoX+10,y:dinoY+10,w:dinoW-20,h:dinoH-15};
-    let coinBox={x:c.x+8,y:c.y+8,w:25,h:25};
+document.addEventListener("keydown", e=>{ if(e.code==="Space" && gameState===PLAYING && dinoY>=ground){ jump=true; } if(e.key==="Escape" && gameState===PLAYING){ gameState = PAUSED; pauseOverlay.style.display = "flex"; bgMusic.pause(); } });
+canvas.addEventListener("touchstart", ()=>{ if(gameState===PLAYING && dinoY>=ground){ jump=true; } });
 
-    if(isColliding(dinoBox,coinBox)){
-      score++;
-      collectSound.currentTime=0;
-      collectSound.play();
-      coins.splice(i,1);
-    }
-  }
+function isColliding(a,b){ return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
 
-  // cactus
-  if(cacti.length===0 || (canvas.width-cacti[cacti.length-1].x)>550){
-    if(Math.random()<0.012){
-      cacti.push({x:canvas.width,y:ground});
-    }
-  }
+async function handleGameOver(){ try{ let res = await fetch("/api/score",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({score,userId,username})}); let data = await res.json(); highScore = data.score; highVal.innerText = highScore; document.getElementById("gameOverHighVal").innerText = highScore; updateMenuScore(); }catch(e){ console.error(e); } }
 
-  for(let i=cacti.length-1;i>=0;i--){
-    let c=cacti[i];
-    c.x-=speed;
+function update(){ if(gameState!==PLAYING) return; bgX -= speed; if(bgX<=-canvas.width) bgX=0; if(jump){ velocity=-11; jump=false; } dinoY += velocity; velocity += gravity; if(velocity>8) velocity=8; if(dinoY>ground){ dinoY=ground; velocity=0; }
+  if(Math.random()<0.02){ coins.push({x:canvas.width,y:ground}); }
+  for(let i=coins.length-1;i>=0;i--){ let c=coins[i]; c.x-=speed; let dBox={x:dinoX+10,y:dinoY+10,w:dinoW-20,h:dinoH-15}; let cBox={x:c.x+8,y:c.y+8,w:25,h:25}; if(isColliding(dBox,cBox)){ score++; collectSound.currentTime=0; collectSound.play(); spawnCoinSparks(c.x,c.y); coins.splice(i,1); } }
+  if(cacti.length===0 || (canvas.width-cacti[cacti.length-1].x)>550){ if(Math.random()<0.012){ cacti.push({x:canvas.width,y:ground}); } }
+  for(let i=cacti.length-1;i>=0;i--){ let c=cacti[i]; c.x-=speed; let dBox={x:dinoX+10,y:dinoY+10,w:dinoW-20,h:dinoH-15}; let caBox={x:c.x+5,y:c.y+10,w:40,h:40}; if(isColliding(dBox,caBox)){ lives--; shakeIntensity=12; spawnDamageParticles(dinoX,dinoY); cacti.splice(i,1); renderLives(); if(lives<=0){ gameState=GAME_OVER; bgMusic.pause(); handleGameOver(); if(!gameOverPlayed){ gameOverSound.play(); gameOverPlayed=true; } document.getElementById("finalScoreVal").innerText=score; gameOverOverlay.style.display="block"; } } }
+  speed+=0.0008; scoreVal.innerText = score; }
 
-    let dinoBox={x:dinoX+10,y:dinoY+10,w:dinoW-20,h:dinoH-15};
-    let cactusBox={x:c.x+5,y:c.y+10,w:40,h:40};
-
-    if(isColliding(dinoBox,cactusBox)){
-      lives--;
-      cacti.splice(i,1);
-
-      if(lives<=0){
-        gameState=GAME_OVER;
-
-        bgMusic.pause();
-
-        handleGameOver(); // ✅ FIXED
-
-        if(!gameOverPlayed){
-          gameOverSound.play();
-          gameOverPlayed=true;
-        }
-
-        homeBtn.style.display="block";
-      }
-    }
-  }
-
-  speed+=0.0008;
-
-  scoreText.innerText="Score: "+score;
-  livesText.innerText="Lives: "+lives;
-}
-
-// ===== DRAW =====
-function draw(){
+function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save(); if(shakeIntensity>0.1){ let dx = (Math.random()-0.5)*shakeIntensity; let dy = (Math.random()-0.5)*shakeIntensity; ctx.translate(dx,dy); shakeIntensity*=shakeDecay; }
   ctx.drawImage(bg,bgX,0,canvas.width,canvas.height);
   ctx.drawImage(bg,bgX+canvas.width,0,canvas.width,canvas.height);
+  if(gameState===HOME){ /* no entities */ }
+  else { ctx.drawImage(dino,dinoX,dinoY,dinoW,dinoH); coins.forEach(c=>ctx.drawImage(coin,c.x,c.y,40,40)); cacti.forEach(c=>ctx.drawImage(cactus,c.x,c.y,50,50)); }
+  for(let i=particles.length-1;i>=0;i--){ let p=particles[i]; p.update(); p.draw(ctx); if(p.life<=0) particles.splice(i,1); }
+  ctx.restore(); }
 
-  if(gameState===HOME){
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
-    ctx.font="40px Arial";
-    ctx.fillText("RYUK RUNNING GAME",canvas.width/2,200);
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
 
-    ctx.font="25px Arial";
-    ctx.fillText("High Score: "+highScore,canvas.width/2,260);
-    return;
-  }
+async function loadHighScore(){ try{ let res = await fetch("/api/score?userId="+userId); let data = await res.json(); highScore = data.score||0; highVal.innerText = highScore; }catch(e){ console.error(e); } }
 
-  ctx.drawImage(dino,dinoX,dinoY,dinoW,dinoH);
-  coins.forEach(c=>ctx.drawImage(coin,c.x,c.y,40,40));
-  cacti.forEach(c=>ctx.drawImage(cactus,c.x,c.y,50,50));
-}
-
-// LOOP
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-// ===== LOAD HIGH SCORE =====
-async function loadHighScore(){
-  try{
-    let res = await fetch("/api/score?userId="+userId);
-    let data = await res.json();
-    highScore = data.score || 0;
-    highText.innerText="High: "+highScore;
-  }catch(e){
-    console.log("Load error", e);
-  }
-}
-
-// ===== INIT =====
-loadHighScore();
+loadHighScore().then(() => {
+  updateHomeInfo();
+  updateMenuScore();
+});
 init();
 loop();
 </script>
-
 </body>
 </html>
